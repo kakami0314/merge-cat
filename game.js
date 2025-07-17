@@ -77,7 +77,7 @@ function drawFruit(fruit) {
   ctx.beginPath();
   ctx.arc(fruit.x, fruit.y, fruit.radius, 0, Math.PI * 2);
   ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1;
   ctx.stroke();
   ctx.restore();
 }
@@ -236,6 +236,59 @@ function update() {
     }
     if (merged) return; // 本帧发生合成后直接return，下一帧再处理
   } while (merged);
+  // 在update碰撞推开部分，每帧多次迭代推开所有球对
+  for (let iter = 0; iter < 3; iter++) { // 每帧迭代3次
+    let allFruits = fruits.slice();
+    if (currentFruit && isDropping) allFruits.push(currentFruit);
+    for (let i = 0; i < allFruits.length; i++) {
+      for (let j = i + 1; j < allFruits.length; j++) {
+        const a = allFruits[i];
+        const b = allFruits[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = a.radius + b.radius;
+        if (dist < minDist && dist > 0) {
+          let totalMass = a.mass + b.mass;
+          const overlap = minDist - dist;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          a.x -= nx * overlap * (b.mass / totalMass);
+          a.y -= ny * overlap * (b.mass / totalMass);
+          b.x += nx * overlap * (a.mass / totalMass);
+          b.y += ny * overlap * (a.mass / totalMass);
+          let va = a.vx * nx + a.vy * ny;
+          let vb = b.vx * nx + b.vy * ny;
+          let vaAfter = (va * (a.mass - b.mass) + 2 * b.mass * vb) / totalMass;
+          let vbAfter = (vb * (b.mass - a.mass) + 2 * a.mass * va) / totalMass;
+          a.vx += (vaAfter - va) * nx;
+          a.vy += (vaAfter - va) * ny;
+          b.vx += (vbAfter - vb) * nx;
+          b.vy += (vbAfter - vb) * ny;
+        }
+      }
+    }
+  }
+  // 合成后新球立即推开（在fruits.push(newFruit)后加一次推开）
+  // 在合成逻辑后加：
+  // for (const fruit of fruits) {
+  //   if (fruit !== newFruit) {
+  //     const dx = newFruit.x - fruit.x;
+  //     const dy = newFruit.y - fruit.y;
+  //     const dist = Math.sqrt(dx * dx + dy * dy);
+  //     const minDist = newFruit.radius + fruit.radius;
+  //     if (dist < minDist && dist > 0) {
+  //       let totalMass = newFruit.mass + fruit.mass;
+  //       const overlap = minDist - dist;
+  //       const nx = dx / dist;
+  //       const ny = dy / dist;
+  //       newFruit.x += nx * overlap * (fruit.mass / totalMass);
+  //       newFruit.y += ny * overlap * (fruit.mass / totalMass);
+  //       fruit.x -= nx * overlap * (newFruit.mass / totalMass);
+  //       fruit.y -= ny * overlap * (newFruit.mass / totalMass);
+  //     }
+  //   }
+  // }
   // 检查顶部是否堆满（只判定vy很小的水果，且顶部超出2像素）
   for (const fruit of fruits) {
     if (fruit.y - fruit.radius <= 2 && Math.abs(fruit.vy) < 0.5) {
