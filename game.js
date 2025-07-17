@@ -249,14 +249,30 @@ function update() {
         const dist = Math.sqrt(dx * dx + dy * dy);
         const minDist = a.radius + b.radius;
         if (dist < minDist && dist > 0) {
-          let totalMass = a.mass + b.mass;
           const overlap = minDist - dist;
           const nx = dx / dist;
           const ny = dy / dist;
-          a.x -= nx * overlap * (b.mass / totalMass);
-          a.y -= ny * overlap * (b.mass / totalMass);
-          b.x += nx * overlap * (a.mass / totalMass);
-          b.y += ny * overlap * (a.mass / totalMass);
+          if (a.type - b.type >= 3) {
+            // a是大球，b是小球
+            a.x -= nx * overlap * 0.1;
+            a.y -= ny * overlap * 0.1;
+            b.x += nx * overlap * 0.9;
+            b.y += ny * overlap * 0.9;
+          } else if (b.type - a.type >= 3) {
+            // b是大球，a是小球
+            a.x -= nx * overlap * 0.9;
+            a.y -= ny * overlap * 0.9;
+            b.x += nx * overlap * 0.1;
+            b.y += ny * overlap * 0.1;
+          } else {
+            let totalMass = a.mass + b.mass;
+            a.x -= nx * overlap * (b.mass / totalMass);
+            a.y -= ny * overlap * (b.mass / totalMass);
+            b.x += nx * overlap * (a.mass / totalMass);
+            b.y += ny * overlap * (a.mass / totalMass);
+          }
+          // 速度交换部分保持原有质量分配
+          let totalMass = a.mass + b.mass;
           let va = a.vx * nx + a.vy * ny;
           let vb = b.vx * nx + b.vy * ny;
           let vaAfter = (va * (a.mass - b.mass) + 2 * b.mass * vb) / totalMass;
