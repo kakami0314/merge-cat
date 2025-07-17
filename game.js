@@ -2,9 +2,9 @@
 // 需要配合 index.html 和 style.css 使用
 
 const canvas = document.getElementById('gameCanvas');
-// 自适应canvas宽高，最大400，2:3比例
+// 自适应canvas宽高，最大320，2:3比例
 function resizeCanvas() {
-  const w = Math.min(window.innerWidth, 400);
+  const w = Math.min(window.innerWidth, 320);
   const h = w * 1.5;
   canvas.width = w;
   canvas.height = h;
@@ -259,12 +259,12 @@ canvas.addEventListener('touchmove', (e) => {
     let x = e.touches[0].clientX - rect.left;
     x = Math.max(currentFruit.radius, Math.min(canvas.width - currentFruit.radius, x));
     currentFruit.x = x;
-    e.preventDefault(); // 阻止页面滚动
+    e.preventDefault();
   }
 }, { passive: false });
 
-// 触摸点击让水果下落
-canvas.addEventListener('touchstart', (e) => {
+// 触摸松开让水果下落
+canvas.addEventListener('touchend', (e) => {
   if (currentFruit && !isGameOver && !isDropping) {
     currentFruit.vy = 2;
     isDropping = true;
