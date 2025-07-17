@@ -2,8 +2,15 @@
 // 需要配合 index.html 和 style.css 使用
 
 const canvas = document.getElementById('gameCanvas');
-canvas.width = 400;
-canvas.height = 600;
+// 自适应canvas宽高，最大400，2:3比例
+function resizeCanvas() {
+  const w = Math.min(window.innerWidth, 400);
+  const h = w * 1.5;
+  canvas.width = w;
+  canvas.height = h;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 const ctx = canvas.getContext('2d');
 
 const FRUITS = [
@@ -245,28 +252,34 @@ function updateScoreDisplay() {
   }
 }
 
-canvas.addEventListener('mousemove', (e) => {
-  if (currentFruit && !isGameOver && !isDropping) { // 只有未下落时允许左右移动
+// 触摸滑动控制水果左右移动
+canvas.addEventListener('touchmove', (e) => {
+  if (currentFruit && !isGameOver && !isDropping) {
     const rect = canvas.getBoundingClientRect();
-    let x = e.clientX - rect.left;
+    let x = e.touches[0].clientX - rect.left;
     x = Math.max(currentFruit.radius, Math.min(canvas.width - currentFruit.radius, x));
     currentFruit.x = x;
+    e.preventDefault(); // 阻止页面滚动
   }
-});
+}, { passive: false });
 
-canvas.addEventListener('click', () => {
+// 触摸点击让水果下落
+canvas.addEventListener('touchstart', (e) => {
   if (currentFruit && !isGameOver && !isDropping) {
     currentFruit.vy = 2;
-    isDropping = true; // 开始下落
+    isDropping = true;
+    e.preventDefault();
   } else if (isGameOver) {
-    // 重新开始
     fruits = [];
     score = 0;
     isGameOver = false;
+    currentFruit = null;
+    isDropping = false;
     spawnFruit();
-    updateScoreDisplay(); // 重新开始时也更新分数显示
+    if (typeof updateScoreDisplay === 'function') updateScoreDisplay();
+    e.preventDefault();
   }
-});
+}, { passive: false });
 
 function gameLoop() {
   update();
