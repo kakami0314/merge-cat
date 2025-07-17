@@ -55,10 +55,13 @@ function createFruit(x, y, type) {
 
 function spawnFruit() {
   const type = randomFruitIndex();
-  const fruit = createFruit(canvas.width / 2, 60, type);
+  // 让新水果x有微小随机偏移
+  const baseX = canvas.width / 2;
+  const offset = (Math.random() - 0.5) * canvas.width * 0.1; // 最大±5%宽度
+  const fruit = createFruit(baseX + offset, 60, type);
   fruit.img.src = FRUITS[type].img;
   currentFruit = fruit;
-  isDropping = false; // 新水果生成时，未下落
+  isDropping = false;
 }
 
 function drawFruit(fruit) {
@@ -263,10 +266,26 @@ canvas.addEventListener('touchmove', (e) => {
   }
 }, { passive: false });
 
-// 触摸松开让水果下落
+// 鼠标点击和触摸松开时给vx一个微小随机值
+canvas.addEventListener('click', () => {
+  if (currentFruit && !isGameOver && !isDropping) {
+    currentFruit.vy = 2;
+    currentFruit.vx = (Math.random() - 0.5) * 1.5;
+    isDropping = true;
+  } else if (isGameOver) {
+    fruits = [];
+    score = 0;
+    isGameOver = false;
+    currentFruit = null;
+    isDropping = false;
+    spawnFruit();
+    if (typeof updateScoreDisplay === 'function') updateScoreDisplay();
+  }
+});
 canvas.addEventListener('touchend', (e) => {
   if (currentFruit && !isGameOver && !isDropping) {
     currentFruit.vy = 2;
+    currentFruit.vx = (Math.random() - 0.5) * 1.5;
     isDropping = true;
     e.preventDefault();
   } else if (isGameOver) {
